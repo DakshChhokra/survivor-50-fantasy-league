@@ -4,3 +4,6 @@ dist-server/
 .env
 *.db
 data/
+HELP.md
+backups/
+backup.sh
