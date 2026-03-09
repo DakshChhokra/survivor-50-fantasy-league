@@ -23,7 +23,10 @@ type EpisodeBreakdown = {
 };
 
 function computeLeaderboard(): LeaderboardEntry[] {
-  const users = db.prepare('SELECT id, username FROM users ORDER BY username ASC').all() as {
+  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+  const users = db
+    .prepare('SELECT id, username FROM users WHERE username != ? ORDER BY username ASC')
+    .all(adminUsername) as {
     id: number;
     username: string;
   }[];

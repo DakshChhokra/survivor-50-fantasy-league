@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { api, Contestant, Episode, Prediction } from '../api';
+import { formatEasternDeadline } from '../utils/time';
 import ContestantCard from './ContestantCard';
 
 type Props = {
@@ -62,14 +63,7 @@ export default function EpisodePicker({ episode, contestants, existingPrediction
       </h3>
       {episode.deadline && (
         <p className="text-xs text-stone-500 mb-3">
-          Deadline:{' '}
-          {new Date(episode.deadline).toLocaleString(undefined, {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-          })}
+          Deadline: {formatEasternDeadline(episode.deadline)}
         </p>
       )}
 
