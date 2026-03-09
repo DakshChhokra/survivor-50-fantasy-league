@@ -8,7 +8,6 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import EpisodePage from './pages/Episode';
 import Profile from './pages/Profile';
-import ContestantsPage from './pages/Contestants';
 import AdminSetup from './pages/admin/Setup';
 import AdminEpisodes from './pages/admin/Episodes';
 import AdminResults from './pages/admin/Results';
@@ -60,7 +59,6 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
-          <Route path="/contestants" element={<ContestantsPage />} />
           <Route
             path="/admin/setup"
             element={
