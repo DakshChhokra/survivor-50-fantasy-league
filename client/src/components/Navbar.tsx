@@ -23,7 +23,6 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center gap-1">
             <NavLink to="/">Home</NavLink>
-            <NavLink to="/contestants">Contestants</NavLink>
             {user && <NavLink to="/dashboard">Dashboard</NavLink>}
             {user && <NavLink to="/profile">Profile</NavLink>}
             {user?.isAdmin && (
@@ -90,7 +89,6 @@ export default function Navbar() {
         {menuOpen && (
           <div className="md:hidden pb-3 space-y-1 border-t border-stone-800 pt-2">
             <MobileLink to="/" onClick={() => setMenuOpen(false)}>Home</MobileLink>
-            <MobileLink to="/contestants" onClick={() => setMenuOpen(false)}>Contestants</MobileLink>
             {user && <MobileLink to="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</MobileLink>}
             {user && <MobileLink to="/profile" onClick={() => setMenuOpen(false)}>Profile</MobileLink>}
             {user?.isAdmin && (
