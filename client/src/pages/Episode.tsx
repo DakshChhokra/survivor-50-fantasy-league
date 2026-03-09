@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api, Episode, Elimination, Prediction, Contestant } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { formatEasternDeadline } from '../utils/time';
 import EpisodePicker from '../components/EpisodePicker';
 import ContestantCard from '../components/ContestantCard';
 
@@ -98,14 +99,7 @@ export default function EpisodePage() {
         )}
         {episode.deadline && (
           <span>
-            ⏰ Deadline:{' '}
-            {new Date(episode.deadline).toLocaleString(undefined, {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit',
-            })}
+            ⏰ Deadline: {formatEasternDeadline(episode.deadline)}
           </span>
         )}
       </div>

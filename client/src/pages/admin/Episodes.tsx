@@ -1,5 +1,10 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { api, Episode } from '../../api';
+import {
+  easternToUtc,
+  utcToEasternDatetimeLocal,
+  formatEasternDeadline,
+} from '../../utils/time';
 
 export default function AdminEpisodes() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
@@ -30,7 +35,7 @@ export default function AdminEpisodes() {
         episode_number: parseInt(epNum, 10),
         air_date: airDate || null,
         num_eliminations: parseInt(numElim, 10) || 1,
-        deadline: deadline || null,
+        deadline: deadline ? easternToUtc(deadline) : null,
       });
       setEpNum('');
       setAirDate('');
@@ -46,7 +51,11 @@ export default function AdminEpisodes() {
 
   async function handleSaveEdit(id: number) {
     try {
-      await api.patch(`/episodes/${id}`, editData);
+      const patchData = { ...editData };
+      if (patchData.deadline) {
+        patchData.deadline = easternToUtc(patchData.deadline);
+      }
+      await api.patch(`/episodes/${id}`, patchData);
       setEditId(null);
       setEditData({});
       await load();
@@ -122,7 +131,7 @@ export default function AdminEpisodes() {
             </div>
             <div>
               <label className="block text-xs font-medium text-stone-400 mb-1">
-                Picks Deadline
+                Picks Deadline (ET)
               </label>
               <input
                 type="datetime-local"
@@ -170,10 +179,16 @@ export default function AdminEpisodes() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-stone-400 mb-1">Deadline</label>
+                        <label className="block text-xs text-stone-400 mb-1">Deadline (ET)</label>
                         <input
                           type="datetime-local"
-                          value={editData.deadline ?? ep.deadline ?? ''}
+                          value={
+                            editData.deadline !== undefined
+                              ? editData.deadline
+                              : ep.deadline
+                              ? utcToEasternDatetimeLocal(ep.deadline)
+                              : ''
+                          }
                           onChange={(e) =>
                             setEditData((d) => ({ ...d, deadline: e.target.value }))
                           }
@@ -217,7 +232,7 @@ export default function AdminEpisodes() {
                         {ep.air_date && <span>Airs: {ep.air_date}</span>}
                         {ep.deadline && (
                           <span>
-                            Deadline: {new Date(ep.deadline).toLocaleString()}
+                            Deadline: {formatEasternDeadline(ep.deadline)}
                           </span>
                         )}
                         <span>{ep.num_eliminations} elimination(s)</span>

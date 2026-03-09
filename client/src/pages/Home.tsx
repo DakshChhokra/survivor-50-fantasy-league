@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ShowStatus, Contestant } from '../api';
+import { useAuth } from '../context/AuthContext';
+import { formatEasternDeadline } from '../utils/time';
 import ContestantCard from '../components/ContestantCard';
 import Leaderboard from '../components/Leaderboard';
 
 export default function Home() {
+  const { user } = useAuth();
   const [status, setStatus] = useState<ShowStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,14 +92,7 @@ export default function Home() {
               )}
               {status.currentEpisode.deadline && (
                 <p className="text-sm text-stone-400">
-                  Deadline:{' '}
-                  {new Date(status.currentEpisode.deadline).toLocaleString(undefined, {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  })}
+                  Deadline: {formatEasternDeadline(status.currentEpisode.deadline)}
                 </p>
               )}
               <div className="mt-3">
@@ -119,11 +115,13 @@ export default function Home() {
         </section>
       )}
 
-      <div className="text-center pb-4">
-        <Link to="/login" className="text-torch-400 hover:text-torch-300 text-sm transition-colors">
-          Login to make your picks →
-        </Link>
-      </div>
+      {!user && (
+        <div className="text-center pb-4">
+          <Link to="/login" className="text-torch-400 hover:text-torch-300 text-sm transition-colors">
+            Login to make your picks →
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

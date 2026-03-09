@@ -52,6 +52,7 @@ router.get('/', (_req: Request, res: Response) => {
     `)
     .get();
 
+  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
   const leaderboard = db
     .prepare(`
       SELECT u.id AS user_id, u.username,
@@ -66,10 +67,11 @@ router.get('/', (_req: Request, res: Response) => {
         ) THEN 1 ELSE 0 END), 0) AS correct_picks
       FROM users u
       LEFT JOIN predictions p ON p.user_id = u.id
+      WHERE u.username != ?
       GROUP BY u.id
       ORDER BY total_points DESC, u.username ASC
     `)
-    .all();
+    .all(adminUsername);
 
   res.json({
     contestants,
