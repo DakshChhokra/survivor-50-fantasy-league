@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import ContestantCard from '../components/ContestantCard';
 import EpisodePicker from '../components/EpisodePicker';
 import Leaderboard from '../components/Leaderboard';
+import { PRESEASON_WINNER_BONUS } from '@app/constants';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -112,7 +113,7 @@ export default function Dashboard() {
             <ContestantCard contestant={{ ...preseasonPick, is_eliminated: 0 } as unknown as Contestant} size="sm" />
             <div>
               <p className="font-medium text-stone-200">{preseasonPick.contestant_name}</p>
-              <p className="text-xs text-stone-500">+50 pts if they win the season</p>
+              <p className="text-xs text-stone-500">+{PRESEASON_WINNER_BONUS} pts if they win the season</p>
             </div>
           </div>
         </div>
@@ -254,7 +255,7 @@ function PreseasonSection({
     <div className="bg-amber-950/30 border border-amber-900/50 rounded-lg p-4">
       <h3 className="font-semibold text-amber-400 mb-1">🏆 Pick the Winner</h3>
       <p className="text-stone-400 text-sm mb-4">
-        Pick who you think will win the season for a +50 point bonus. This cannot be changed once locked.
+        Pick who you think will win the season for a +{PRESEASON_WINNER_BONUS} point bonus. This cannot be changed once locked.
       </p>
       <div className="flex flex-wrap gap-3 mb-4">
         {contestants.map((c) => (

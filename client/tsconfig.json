@@ -14,7 +14,10 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "paths": {
+      "@app/constants": ["../server/constants.ts"]
+    }
   },
   "include": ["src"]
 }

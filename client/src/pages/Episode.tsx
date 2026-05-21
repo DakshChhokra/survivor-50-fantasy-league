@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatEasternDeadline } from '../utils/time';
 import EpisodePicker from '../components/EpisodePicker';
 import ContestantCard from '../components/ContestantCard';
+import { CORRECT_PICK_POINTS } from '@app/constants';
 
 type EpisodePrediction = Prediction & {
   username: string;
@@ -191,7 +192,7 @@ export default function EpisodePage() {
                         correct ? 'text-emerald-400' : 'text-stone-600'
                       }`}
                     >
-                      {correct ? '+10' : '0'}
+                      {correct ? `+${CORRECT_PICK_POINTS}` : '0'}
                     </span>
                   )}
                 </div>
