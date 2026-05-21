@@ -5,7 +5,7 @@ A Survivor TV show fantasy league app for friend groups. Pick who gets voted off
 ## Features
 
 - **Public homepage**: Contestant status (Still In / Eliminated) + leaderboard
-- **Weekly picks**: Submit who you think will be eliminated before the Wednesday deadline (+10 pts each correct pick)
+- **Weekly picks**: Submit who you think will be eliminated before the Wednesday deadline (+25 pts each correct pick)
 - **Preseason winner pick**: Pick who wins the season for a +50 pt bonus
 - **Admin panel**: Upload contestants, create episodes, mark eliminations, view all users
 
@@ -20,7 +20,7 @@ A Survivor TV show fantasy league app for friend groups. Pick who gets voted off
 
 | Event | Points |
 |-------|--------|
-| Correct weekly pick | +10 pts |
+| Correct weekly pick | +25 pts |
 | Correct preseason winner pick | +50 pts bonus |
 
 A weekly pick is correct if the picked contestant is among those eliminated that episode (works for double-elimination episodes too).
