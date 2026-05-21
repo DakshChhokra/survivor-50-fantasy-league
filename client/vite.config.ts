@@ -4,6 +4,11 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@app/constants': path.resolve(__dirname, '../server/constants.ts'),
+    },
+  },
   root: path.resolve(__dirname),
   build: {
     outDir: path.resolve(__dirname, '../dist'),

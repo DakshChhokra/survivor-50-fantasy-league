@@ -118,13 +118,7 @@ export type ShowStatus = {
   contestants: Contestant[];
   currentEpisode: Episode | null;
   latestEpisode: Episode | null;
-  leaderboard: {
-    user_id: number;
-    username: string;
-    total_points: number;
-    total_picks: number;
-    correct_picks: number;
-  }[];
+  leaderboard: LeaderboardEntry[];
 };
 
 export type User = {

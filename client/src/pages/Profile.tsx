@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, Prediction, PreseasonPick, LeaderboardEntry } from '../api';
 import { useAuth } from '../context/AuthContext';
+import { CORRECT_PICK_POINTS, PRESEASON_WINNER_BONUS } from '@app/constants';
 
 export default function Profile() {
   const { user } = useAuth();
@@ -31,7 +32,7 @@ export default function Profile() {
 
   const myLeaderboardEntry = leaderboard.find((e) => e.username === user?.username);
   const correctPicks = predictions.filter((p) => p.is_correct);
-  const totalPoints = (correctPicks.length * 10) + (myLeaderboardEntry?.preseason_bonus ?? 0);
+  const totalPoints = (correctPicks.length * CORRECT_PICK_POINTS) + (myLeaderboardEntry?.preseason_bonus ?? 0);
 
   return (
     <div className="space-y-8">
@@ -60,7 +61,7 @@ export default function Profile() {
             )}
             <div>
               <p className="font-medium text-stone-200">{preseasonPick.contestant_name}</p>
-              <p className="text-xs text-stone-500">+50 pts if they win the season</p>
+              <p className="text-xs text-stone-500">+{PRESEASON_WINNER_BONUS} pts if they win the season</p>
             </div>
           </div>
         </div>
@@ -96,7 +97,7 @@ export default function Profile() {
                     pred.is_correct ? 'text-emerald-400' : 'text-stone-600'
                   }`}
                 >
-                  {pred.is_correct ? '+10 pts' : pred.is_locked ? '0 pts' : '—'}
+                  {pred.is_correct ? `+${CORRECT_PICK_POINTS} pts` : pred.is_locked ? '0 pts' : '—'}
                 </span>
               </Link>
             ))}
