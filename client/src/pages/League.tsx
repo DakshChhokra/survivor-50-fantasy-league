@@ -388,11 +388,8 @@ function ContestantGroup({
           {title} <span className="text-sm font-normal opacity-70">({contestants.length})</span>
         </h2>
         {canOpen && (
-          <p className="relative group/tip w-fit mt-1 text-xs font-normal text-stone-500 cursor-help border-b border-dotted border-stone-600">
+          <p className="mt-1 text-xs font-normal text-stone-500">
             Click a player to see more
-            <span className="pointer-events-none absolute left-0 top-full mt-1 z-20 w-56 rounded-md bg-stone-800 border border-stone-700 px-2 py-1.5 text-xs text-stone-300 opacity-0 group-hover/tip:opacity-100 transition-opacity shadow-lg">
-              Click to see more photos and read about them
-            </span>
           </p>
         )}
       </div>
@@ -403,17 +400,12 @@ function ContestantGroup({
           {contestants.map((c) => {
             const bio = contestantBio(c.name);
             return (
-              <div key={c.id} className="relative group/bio flex flex-col items-center hover:z-30">
+              <div key={c.id} className="flex flex-col items-center">
                 <ContestantCard
                   contestant={c}
                   size="sm"
                   onClick={bio ? () => onOpen(c) : undefined}
                 />
-                {bio && (
-                  <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1 z-20 hidden group-hover/bio:block w-44 rounded-md bg-stone-800 border border-stone-700 px-2 py-1 text-[11px] text-stone-300 text-center shadow-lg">
-                    Click to see more photos and read about them
-                  </span>
-                )}
                 {showEpisode && c.eliminated_episode && (
                   <span className="text-xs text-stone-500 mt-0.5">Ep {c.eliminated_episode}</span>
                 )}
