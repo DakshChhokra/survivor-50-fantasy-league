@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { api, Episode, Elimination, Prediction, Contestant } from '../api';
+import { api, Episode, Elimination, Prediction, Contestant, Season } from '../api';
 import { useAuth } from '../context/AuthContext';
-import { formatEasternDeadline } from '../utils/time';
+import { formatAirDate, formatEasternDeadline } from '../utils/time';
 import EpisodePicker from '../components/EpisodePicker';
 import ContestantCard from '../components/ContestantCard';
-import { CORRECT_PICK_POINTS } from '@app/constants';
+import { isEpisodeLocked } from '@app/constants';
+import { multiBootNote, pickResult } from '../utils/picks';
 
 type EpisodePrediction = Prediction & {
   username: string;
@@ -19,6 +20,7 @@ export default function EpisodePage() {
   const [eliminations, setEliminations] = useState<Elimination[]>([]);
   const [predictions, setPredictions] = useState<EpisodePrediction[]>([]);
   const [contestants, setContestants] = useState<Contestant[]>([]);
+  const [season, setSeason] = useState<Season | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,16 +29,18 @@ export default function EpisodePage() {
     setLoading(true);
     setError(null);
     try {
-      const [ep, elims, preds, conts] = await Promise.all([
+      const [ep, elims, preds, seasons] = await Promise.all([
         api.get<Episode>(`/episodes/${id}`),
         api.get<Elimination[]>(`/eliminations/episode/${id}`),
         api.get<EpisodePrediction[]>(`/predictions/episode/${id}`),
-        api.get<Contestant[]>('/contestants'),
+        api.get<Season[]>('/seasons'),
       ]);
+      const conts = await api.get<Contestant[]>(`/contestants?season_id=${ep.season_id}`);
       setEpisode(ep);
       setEliminations(elims);
       setPredictions(preds);
       setContestants(conts);
+      setSeason(seasons.find((s) => s.id === ep.season_id) ?? null);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -51,8 +55,8 @@ export default function EpisodePage() {
   if (!episode) return null;
 
   const myPrediction = predictions.find((p) => p.username === user?.username) ?? null;
-  const isLocked =
-    episode.is_locked || (episode.deadline ? new Date() > new Date(episode.deadline) : false);
+  const locked = isEpisodeLocked(episode);
+  const canPick = Boolean(user && !user.isAdmin && !locked && season?.is_current);
 
   function handlePickSaved(prediction: Prediction) {
     const updated = { ...prediction, username: user!.username, is_correct: 0 } as EpisodePrediction;
@@ -68,18 +72,19 @@ export default function EpisodePage() {
   }
 
   const eliminatedIds = new Set(eliminations.map((e) => e.contestant_id));
+  const bootNote = multiBootNote(episode.num_eliminations);
 
   return (
     <div className="space-y-8">
       <div className="flex items-center gap-3">
-        <Link to="/dashboard" className="text-stone-500 hover:text-stone-300 transition-colors">
+        <Link to="/" className="text-stone-500 hover:text-stone-300 transition-colors">
           ← Back
         </Link>
         <h1 className="text-2xl font-bold text-stone-100">
           Episode {episode.episode_number}
         </h1>
-        {episode.is_locked ? (
-          <span className="text-xs bg-stone-800 text-stone-400 px-2 py-1 rounded-full">🔒 Locked</span>
+        {locked ? (
+          <span className="text-xs bg-stone-800 text-stone-400 px-2 py-1 rounded-full">Locked</span>
         ) : (
           <span className="text-xs bg-green-900/50 text-green-400 border border-green-800 px-2 py-1 rounded-full">
             Picks Open
@@ -90,7 +95,7 @@ export default function EpisodePage() {
       <div className="flex gap-4 text-sm text-stone-400 flex-wrap">
         {episode.air_date && (
           <span>
-            📅 {new Date(episode.air_date).toLocaleDateString(undefined, {
+            {formatAirDate(episode.air_date, {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
@@ -100,9 +105,10 @@ export default function EpisodePage() {
         )}
         {episode.deadline && (
           <span>
-            ⏰ Deadline: {formatEasternDeadline(episode.deadline)}
+            Deadline: {formatEasternDeadline(episode.deadline)}
           </span>
         )}
+        {bootNote && <span className="text-torch-400">{bootNote}</span>}
       </div>
 
       {eliminations.length > 0 && (
@@ -130,7 +136,7 @@ export default function EpisodePage() {
         </section>
       )}
 
-      {user && !isLocked && (
+      {canPick && (
         <EpisodePicker
           episode={episode}
           contestants={contestants}
@@ -147,7 +153,10 @@ export default function EpisodePage() {
           <div className="space-y-2">
             {predictions.map((pred) => {
               const isMe = pred.username === user?.username;
-              const correct = eliminatedIds.has(pred.contestant_id);
+              const result = pickResult({
+                is_correct: eliminatedIds.has(pred.contestant_id) ? 1 : 0,
+                elimination_count: eliminations.length,
+              });
               return (
                 <div
                   key={pred.id}
@@ -160,15 +169,9 @@ export default function EpisodePage() {
                   `}
                 >
                   <div className="w-6 text-center">
-                    {episode.is_locked || eliminations.length > 0 ? (
-                      correct ? (
-                        <span className="text-emerald-400">✓</span>
-                      ) : (
-                        <span className="text-red-400">✕</span>
-                      )
-                    ) : (
-                      <span className="text-stone-600">○</span>
-                    )}
+                    {result === 'correct' && <span className="text-emerald-400">✓</span>}
+                    {result === 'wrong' && <span className="text-red-400">✕</span>}
+                    {result === 'pending' && <span className="text-stone-600">○</span>}
                   </div>
                   <span className={`flex-1 font-medium ${isMe ? 'text-torch-300' : 'text-stone-200'}`}>
                     {pred.username}
@@ -186,15 +189,17 @@ export default function EpisodePage() {
                     )}
                     <span className="text-stone-300 text-sm">{pred.contestant_name}</span>
                   </div>
-                  {(episode.is_locked || eliminations.length > 0) && (
-                    <span
-                      className={`text-sm font-bold shrink-0 ${
-                        correct ? 'text-emerald-400' : 'text-stone-600'
-                      }`}
-                    >
-                      {correct ? `+${CORRECT_PICK_POINTS}` : '0'}
-                    </span>
-                  )}
+                  <span
+                    className={`text-sm font-bold shrink-0 ${
+                      result === 'correct' ? 'text-emerald-400' : 'text-stone-600'
+                    }`}
+                  >
+                    {result === 'correct'
+                      ? `+${season?.weekly_pick_points ?? 0}`
+                      : result === 'wrong'
+                        ? '0'
+                        : '—'}
+                  </span>
                 </div>
               );
             })}
@@ -202,7 +207,7 @@ export default function EpisodePage() {
         </section>
       )}
 
-      {predictions.length === 0 && isLocked && (
+      {predictions.length === 0 && locked && (
         <div className="text-center text-stone-500 py-8">No picks were submitted for this episode.</div>
       )}
     </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api, Episode, Contestant, Elimination } from '../../api';
 
-export default function AdminResults() {
+export default function AdminResults({ seasonId }: { seasonId: number }) {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [contestants, setContestants] = useState<Contestant[]>([]);
   const [eliminations, setEliminations] = useState<Record<number, Elimination[]>>({});
@@ -13,8 +13,8 @@ export default function AdminResults() {
     setLoading(true);
     try {
       const [eps, conts] = await Promise.all([
-        api.get<Episode[]>('/episodes'),
-        api.get<Contestant[]>('/contestants'),
+        api.get<Episode[]>(`/episodes?season_id=${seasonId}`),
+        api.get<Contestant[]>(`/contestants?season_id=${seasonId}`),
       ]);
       setEpisodes(eps);
       setContestants(conts);
@@ -28,17 +28,23 @@ export default function AdminResults() {
       );
       setEliminations(elimMap);
 
-      if (eps.length > 0 && selectedEp === null) {
-        setSelectedEp(eps[eps.length - 1].id);
+      if (eps.length > 0) {
+        setSelectedEp((prev) =>
+          prev && eps.some((e) => e.id === prev) ? prev : eps[eps.length - 1].id
+        );
+      } else {
+        setSelectedEp(null);
       }
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [seasonId]);
 
   async function handleMarkEliminated(episodeId: number, contestantId: number) {
+    const contestant = contestants.find((c) => c.id === contestantId);
+    if (!confirm(`Mark ${contestant?.name ?? 'this contestant'} eliminated?`)) return;
     setMarking(contestantId);
     try {
       const elim = await api.post<Elimination>('/eliminations', {
@@ -86,7 +92,7 @@ export default function AdminResults() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-stone-100">Mark Results</h1>
+      <h2 className="text-xl font-bold text-stone-100">Results</h2>
 
       {episodes.length === 0 ? (
         <p className="text-stone-500">No episodes yet. Create episodes first.</p>

@@ -1,32 +1,36 @@
 import { useState, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
+  const [mode, setMode] = useState<'in' | 'join'>('in');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
-  if (user) {
-    navigate('/dashboard', { replace: true });
-    return null;
-  }
+  if (user) return <Navigate to="/" replace />;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+    if (mode === 'join' && password !== confirm) {
+      setError('Passwords do not match');
+      return;
+    }
     setLoading(true);
     try {
-      const res = await api.post<{ token: string; username: string; isAdmin: boolean }>(
-        '/auth/login',
-        { username, password }
-      );
+      const path = mode === 'join' ? '/auth/register' : '/auth/login';
+      const res = await api.post<{ token: string; username: string; isAdmin: boolean }>(path, {
+        username,
+        password,
+      });
       login(res.token, res.username, res.isAdmin);
-      navigate('/dashboard', { replace: true });
+      navigate('/', { replace: true });
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -37,13 +41,35 @@ export default function Login() {
   return (
     <div className="flex justify-center pt-12">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <span className="text-5xl">🔥</span>
-          <h1 className="text-2xl font-bold text-stone-100 mt-3">Welcome back</h1>
-          <p className="text-stone-400 text-sm mt-1">Sign in to your account</p>
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-stone-100">
+            {mode === 'in' ? 'Log in' : 'Join the league'}
+          </h1>
+          <p className="text-stone-400 text-sm mt-1">Same group of friends, new season or old.</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-stone-900 border border-stone-800 rounded-xl p-6 space-y-4">
+        <div className="flex gap-2 mb-4">
+          <button
+            type="button"
+            onClick={() => { setMode('in'); setError(null); }}
+            className={`flex-1 py-1.5 rounded-lg text-sm ${
+              mode === 'in' ? 'bg-stone-800 text-stone-100' : 'text-stone-500'
+            }`}
+          >
+            Log in
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode('join'); setError(null); }}
+            className={`flex-1 py-1.5 rounded-lg text-sm ${
+              mode === 'join' ? 'bg-stone-800 text-stone-100' : 'text-stone-500'
+            }`}
+          >
+            Join
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="card p-6 space-y-4">
           {error && (
             <div className="bg-red-950/50 border border-red-800 text-red-300 text-sm px-3 py-2 rounded-lg">
               {error}
@@ -58,9 +84,16 @@ export default function Login() {
               onChange={(e) => setUsername(e.target.value)}
               required
               autoFocus
-              className="w-full bg-stone-800 border border-stone-700 text-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-torch-600 transition-colors"
-              placeholder="your username"
+              autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              minLength={mode === 'join' ? 2 : undefined}
+              className="input-field"
             />
+            <p className="text-xs text-stone-500 mt-1.5">
+              Can't get in? Text Daksh — he'll reset your password.
+            </p>
           </div>
 
           <div>
@@ -70,24 +103,40 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full bg-stone-800 border border-stone-700 text-stone-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-torch-600 transition-colors"
-              placeholder="••••••••"
+              minLength={mode === 'join' ? 4 : undefined}
+              className="input-field"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-torch-600 hover:bg-torch-500 disabled:bg-stone-700 disabled:text-stone-500 text-white font-medium py-2.5 rounded-lg transition-colors"
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
+          {mode === 'join' && (
+            <div>
+              <label className="block text-sm font-medium text-stone-300 mb-1.5">
+                Confirm password
+              </label>
+              <input
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                className="input-field"
+              />
+            </div>
+          )}
+
+          <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">
+            {loading
+              ? mode === 'join'
+                ? 'Creating account...'
+                : 'Signing in...'
+              : mode === 'join'
+                ? 'Create account'
+                : 'Sign in'}
           </button>
         </form>
 
         <p className="text-center text-sm text-stone-500 mt-4">
-          No account?{' '}
-          <Link to="/register" className="text-torch-400 hover:text-torch-300 transition-colors">
-            Join the league
+          <Link to="/" className="text-torch-400 hover:text-torch-300">
+            Back to the league
           </Link>
         </p>
       </div>

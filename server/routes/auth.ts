@@ -20,7 +20,9 @@ router.post('/register', (req: Request, res: Response) => {
     return;
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(username.trim());
+  const existing = db
+    .prepare('SELECT id FROM users WHERE LOWER(username) = LOWER(?)')
+    .get(username.trim());
   if (existing) {
     res.status(409).json({ error: 'Username already taken' });
     return;
@@ -43,7 +45,7 @@ router.post('/login', (req: Request, res: Response) => {
   }
 
   const user = db
-    .prepare('SELECT * FROM users WHERE username = ?')
+    .prepare('SELECT * FROM users WHERE LOWER(username) = LOWER(?)')
     .get(username.trim()) as User | undefined;
 
   if (!user || user.password !== password) {
@@ -59,10 +61,30 @@ router.post('/login', (req: Request, res: Response) => {
 });
 
 router.get('/users', requireAdmin, (_req: Request, res: Response) => {
+  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
   const users = db
     .prepare('SELECT id, username, created_at FROM users ORDER BY created_at ASC')
-    .all();
-  res.json(users);
+    .all() as { id: number; username: string; created_at: string }[];
+  res.json(
+    users.map((u) => ({ ...u, is_admin: u.username === adminUsername }))
+  );
+});
+
+router.patch('/users/:id/password', requireAdmin, (req: Request, res: Response) => {
+  const { password } = req.body as { password?: string };
+  if (!password || password.length < 4) {
+    res.status(400).json({ error: 'Password must be at least 4 characters' });
+    return;
+  }
+
+  const user = db.prepare('SELECT id FROM users WHERE id = ?').get(req.params.id);
+  if (!user) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+
+  db.prepare('UPDATE users SET password = ? WHERE id = ?').run(password, req.params.id);
+  res.json({ success: true });
 });
 
 export default router;

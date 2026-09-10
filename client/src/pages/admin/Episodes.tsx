@@ -6,7 +6,7 @@ import {
   formatEasternDeadline,
 } from '../../utils/time';
 
-export default function AdminEpisodes() {
+export default function AdminEpisodes({ seasonId }: { seasonId: number }) {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(true);
   const [epNum, setEpNum] = useState('');
@@ -20,11 +20,11 @@ export default function AdminEpisodes() {
 
   async function load() {
     setLoading(true);
-    const data = await api.get<Episode[]>('/episodes').finally(() => setLoading(false));
+    const data = await api.get<Episode[]>(`/episodes?season_id=${seasonId}`).finally(() => setLoading(false));
     setEpisodes(data);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [seasonId]);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
@@ -33,6 +33,7 @@ export default function AdminEpisodes() {
     try {
       await api.post('/episodes', {
         episode_number: parseInt(epNum, 10),
+        season_id: seasonId,
         air_date: airDate || null,
         num_eliminations: parseInt(numElim, 10) || 1,
         deadline: deadline ? easternToUtc(deadline) : null,
@@ -85,7 +86,7 @@ export default function AdminEpisodes() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-stone-100">Manage Episodes</h1>
+      <h2 className="text-xl font-bold text-stone-100">Episodes</h2>
 
       <div className="bg-stone-900 border border-stone-800 rounded-xl p-6">
         <h2 className="font-semibold text-stone-200 mb-4">Create Episode</h2>
@@ -166,7 +167,7 @@ export default function AdminEpisodes() {
               >
                 {editId === ep.id ? (
                   <div className="space-y-3">
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="grid sm:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs text-stone-400 mb-1">Air Date</label>
                         <input
@@ -179,12 +180,27 @@ export default function AdminEpisodes() {
                         />
                       </div>
                       <div>
+                        <label className="block text-xs text-stone-400 mb-1"># Eliminations</label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={editData.num_eliminations ?? ep.num_eliminations}
+                          onChange={(e) =>
+                            setEditData((d) => ({
+                              ...d,
+                              num_eliminations: parseInt(e.target.value, 10) || 1,
+                            }))
+                          }
+                          className="w-full bg-stone-800 border border-stone-700 text-stone-100 rounded px-3 py-1.5 text-sm focus:outline-none"
+                        />
+                      </div>
+                      <div>
                         <label className="block text-xs text-stone-400 mb-1">Deadline (ET)</label>
                         <input
                           type="datetime-local"
                           value={
                             editData.deadline !== undefined
-                              ? editData.deadline
+                              ? editData.deadline ?? ''
                               : ep.deadline
                               ? utcToEasternDatetimeLocal(ep.deadline)
                               : ''
@@ -220,7 +236,7 @@ export default function AdminEpisodes() {
                         </span>
                         {ep.is_locked ? (
                           <span className="text-xs bg-stone-800 text-stone-400 px-2 py-0.5 rounded-full">
-                            🔒 Locked
+                            Locked
                           </span>
                         ) : (
                           <span className="text-xs bg-green-900/50 text-green-400 border border-green-800 px-2 py-0.5 rounded-full">

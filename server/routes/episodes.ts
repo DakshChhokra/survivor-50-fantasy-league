@@ -1,18 +1,27 @@
 import { Router, Request, Response } from 'express';
-import db, { Episode } from '../db';
+import db, { Episode, resolveSeasonId, getCurrentSeason } from '../db';
 import { requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
-router.get('/', (_req: Request, res: Response) => {
+router.get('/', (req: Request, res: Response) => {
+  const seasonId = resolveSeasonId(req.query.season_id as string | undefined);
+  if (!seasonId) {
+    res.json([]);
+    return;
+  }
+
   const episodes = db
-    .prepare(`
+    .prepare(
+      `
       SELECT e.*,
         (SELECT COUNT(*) FROM eliminations WHERE episode_id = e.id) AS elimination_count
       FROM episodes e
+      WHERE e.season_id = ?
       ORDER BY e.episode_number ASC
-    `)
-    .all();
+    `
+    )
+    .all(seasonId);
   res.json(episodes);
 });
 
@@ -34,11 +43,12 @@ router.get('/:id', (req: Request, res: Response) => {
 });
 
 router.post('/', requireAdmin, (req: Request, res: Response) => {
-  const { episode_number, air_date, num_eliminations, deadline } = req.body as {
+  const { episode_number, air_date, num_eliminations, deadline, season_id } = req.body as {
     episode_number?: number;
     air_date?: string;
     num_eliminations?: number;
     deadline?: string;
+    season_id?: number | string;
   };
 
   if (!episode_number) {
@@ -46,9 +56,18 @@ router.post('/', requireAdmin, (req: Request, res: Response) => {
     return;
   }
 
+  const seasonId =
+    season_id !== undefined && season_id !== ''
+      ? resolveSeasonId(String(season_id))
+      : getCurrentSeason()?.id ?? null;
+  if (!seasonId) {
+    res.status(400).json({ error: 'No season selected' });
+    return;
+  }
+
   const existing = db
-    .prepare('SELECT id FROM episodes WHERE episode_number = ?')
-    .get(episode_number);
+    .prepare('SELECT id FROM episodes WHERE episode_number = ? AND season_id = ?')
+    .get(episode_number, seasonId);
   if (existing) {
     res.status(409).json({ error: `Episode ${episode_number} already exists` });
     return;
@@ -56,9 +75,9 @@ router.post('/', requireAdmin, (req: Request, res: Response) => {
 
   const result = db
     .prepare(
-      'INSERT INTO episodes (episode_number, air_date, num_eliminations, deadline) VALUES (?, ?, ?, ?)'
+      'INSERT INTO episodes (episode_number, air_date, num_eliminations, deadline, season_id) VALUES (?, ?, ?, ?, ?)'
     )
-    .run(episode_number, air_date || null, num_eliminations || 1, deadline || null);
+    .run(episode_number, air_date || null, num_eliminations || 1, deadline || null, seasonId);
 
   const episode = db
     .prepare('SELECT * FROM episodes WHERE id = ?')

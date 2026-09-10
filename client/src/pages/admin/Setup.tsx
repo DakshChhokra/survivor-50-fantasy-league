@@ -1,7 +1,7 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { api, Contestant } from '../../api';
 
-export default function AdminSetup() {
+export default function AdminSetup({ seasonId }: { seasonId: number }) {
   const [contestants, setContestants] = useState<Contestant[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
@@ -11,14 +11,22 @@ export default function AdminSetup() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editFile, setEditFile] = useState<File | null>(null);
 
   async function load() {
     setLoading(true);
-    const data = await api.get<Contestant[]>('/contestants').finally(() => setLoading(false));
+    const data = await api
+      .get<Contestant[]>(`/contestants?season_id=${seasonId}`)
+      .finally(() => setLoading(false));
     setContestants(data);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seasonId]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
@@ -40,6 +48,7 @@ export default function AdminSetup() {
     try {
       const formData = new FormData();
       formData.append('name', name.trim());
+      formData.append('season_id', String(seasonId));
       if (order) formData.append('display_order', order);
       if (file) formData.append('headshot', file);
 
@@ -67,9 +76,23 @@ export default function AdminSetup() {
     }
   }
 
+  async function handleSaveEdit(id: number) {
+    try {
+      const formData = new FormData();
+      formData.append('name', editName.trim());
+      if (editFile) formData.append('headshot', editFile);
+      await api.patchForm<Contestant>(`/contestants/${id}`, formData);
+      setEditId(null);
+      setEditFile(null);
+      await load();
+    } catch (e) {
+      alert((e as Error).message);
+    }
+  }
+
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-stone-100">Contestant Setup</h1>
+      <h2 className="text-xl font-bold text-stone-100">Contestants</h2>
 
       <div className="bg-stone-900 border border-stone-800 rounded-xl p-6">
         <h2 className="font-semibold text-stone-200 mb-4">Add Contestant</h2>
@@ -171,18 +194,63 @@ export default function AdminSetup() {
                     ?
                   </div>
                 )}
-                <div className="flex-1">
-                  <span className="font-medium text-stone-200">{c.name}</span>
-                  {c.display_order !== 0 && (
-                    <span className="text-xs text-stone-500 ml-2">order: {c.display_order}</span>
-                  )}
-                </div>
-                <button
-                  onClick={() => handleDelete(c.id, c.name)}
-                  className="text-red-400 hover:text-red-300 text-sm transition-colors"
-                >
-                  Remove
-                </button>
+                {editId === c.id ? (
+                  <div className="flex-1 flex flex-wrap items-center gap-2">
+                    <input
+                      className="input-field max-w-xs"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                    />
+                    <label className="text-xs text-stone-400 cursor-pointer">
+                      {editFile ? editFile.name : 'Replace photo'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => setEditFile(e.target.files?.[0] ?? null)}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleSaveEdit(c.id)}
+                      className="text-sm text-emerald-400"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setEditId(null); setEditFile(null); }}
+                      className="text-sm text-stone-500"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex-1">
+                      <span className="font-medium text-stone-200">{c.name}</span>
+                      {c.display_order !== 0 && (
+                        <span className="text-xs text-stone-500 ml-2">order: {c.display_order}</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditId(c.id);
+                        setEditName(c.name);
+                        setEditFile(null);
+                      }}
+                      className="text-torch-400 hover:text-torch-300 text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(c.id, c.name)}
+                      className="text-red-400 hover:text-red-300 text-sm transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </>
+                )}
               </div>
             ))}
           </div>

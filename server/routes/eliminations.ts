@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import db, { Elimination, Episode } from '../db';
+import db, { Contestant, Elimination, Episode } from '../db';
 import { requireAdmin } from '../middleware/auth';
 
 const router = Router();
@@ -36,17 +36,29 @@ router.post('/', requireAdmin, (req: Request, res: Response) => {
     return;
   }
 
-  const contestant = db.prepare('SELECT id FROM contestants WHERE id = ?').get(contestant_id);
+  const contestant = db
+    .prepare('SELECT * FROM contestants WHERE id = ?')
+    .get(contestant_id) as Contestant | undefined;
   if (!contestant) {
     res.status(404).json({ error: 'Contestant not found' });
     return;
   }
+  if (contestant.season_id !== episode.season_id) {
+    res.status(400).json({ error: 'Contestant is not in this season' });
+    return;
+  }
 
-  const alreadyElim = db
-    .prepare('SELECT id FROM eliminations WHERE episode_id = ? AND contestant_id = ?')
-    .get(episode_id, contestant_id);
-  if (alreadyElim) {
-    res.status(409).json({ error: 'Contestant already eliminated in this episode' });
+  const alreadyOut = db
+    .prepare(
+      `
+      SELECT 1 FROM eliminations el
+      JOIN episodes e ON el.episode_id = e.id
+      WHERE el.contestant_id = ? AND e.season_id = ?
+    `
+    )
+    .get(contestant_id, episode.season_id);
+  if (alreadyOut) {
+    res.status(400).json({ error: 'That contestant has already been eliminated' });
     return;
   }
 

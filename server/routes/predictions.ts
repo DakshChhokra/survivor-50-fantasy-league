@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
-import db, { Episode, Prediction } from '../db';
+import db, { Episode, Prediction, Contestant, getCurrentSeason, getSeasonById } from '../db';
 import { requireAuth } from '../middleware/auth';
+import { isEpisodeLocked } from '../constants';
 
 const router = Router();
 
@@ -26,10 +27,21 @@ router.get('/episode/:episodeId', (req: Request, res: Response) => {
 });
 
 router.get('/mine', requireAuth, (req: Request, res: Response) => {
+  const seasonId = req.query.season_id
+    ? Number(req.query.season_id)
+    : getCurrentSeason()?.id;
+
+  if (!seasonId) {
+    res.json([]);
+    return;
+  }
+
   const predictions = db
-    .prepare(`
+    .prepare(
+      `
       SELECT p.*, c.name AS contestant_name, c.headshot_url,
-        e.episode_number, e.air_date, e.is_locked,
+        e.episode_number, e.air_date, e.is_locked, e.deadline,
+        (SELECT COUNT(*) FROM eliminations WHERE episode_id = p.episode_id) AS elimination_count,
         CASE WHEN EXISTS (
           SELECT 1 FROM eliminations el
           WHERE el.episode_id = p.episode_id AND el.contestant_id = p.contestant_id
@@ -37,15 +49,21 @@ router.get('/mine', requireAuth, (req: Request, res: Response) => {
       FROM predictions p
       JOIN contestants c ON p.contestant_id = c.id
       JOIN episodes e ON p.episode_id = e.id
-      WHERE p.user_id = ?
+      WHERE p.user_id = ? AND e.season_id = ?
       ORDER BY e.episode_number ASC
-    `)
-    .all(req.user!.userId);
+    `
+    )
+    .all(req.user!.userId, seasonId);
 
   res.json(predictions);
 });
 
 router.post('/', requireAuth, (req: Request, res: Response) => {
+  if (req.user!.isAdmin) {
+    res.status(403).json({ error: 'Admin accounts cannot make picks' });
+    return;
+  }
+
   const { episode_id, contestant_id } = req.body as {
     episode_id?: number;
     contestant_id?: number;
@@ -65,19 +83,40 @@ router.post('/', requireAuth, (req: Request, res: Response) => {
     return;
   }
 
-  if (episode.is_locked) {
+  const season = getSeasonById(episode.season_id);
+  if (!season?.is_current) {
+    res.status(403).json({ error: 'Picks are only open for the current season' });
+    return;
+  }
+
+  if (isEpisodeLocked(episode)) {
     res.status(403).json({ error: 'Picks are locked for this episode' });
     return;
   }
 
-  if (episode.deadline && new Date() > new Date(episode.deadline)) {
-    res.status(403).json({ error: 'The deadline for this episode has passed' });
+  const contestant = db
+    .prepare('SELECT * FROM contestants WHERE id = ?')
+    .get(contestant_id) as Contestant | undefined;
+  if (!contestant) {
+    res.status(404).json({ error: 'Contestant not found' });
+    return;
+  }
+  if (contestant.season_id !== episode.season_id) {
+    res.status(400).json({ error: 'Contestant is not in this season' });
     return;
   }
 
-  const contestant = db.prepare('SELECT id FROM contestants WHERE id = ?').get(contestant_id);
-  if (!contestant) {
-    res.status(404).json({ error: 'Contestant not found' });
+  const alreadyOut = db
+    .prepare(
+      `
+      SELECT 1 FROM eliminations el
+      JOIN episodes e ON el.episode_id = e.id
+      WHERE el.contestant_id = ? AND e.season_id = ?
+    `
+    )
+    .get(contestant_id, episode.season_id);
+  if (alreadyOut) {
+    res.status(400).json({ error: 'That contestant has already been eliminated' });
     return;
   }
 
@@ -131,7 +170,7 @@ router.delete('/:id', requireAuth, (req: Request, res: Response) => {
     .prepare('SELECT * FROM episodes WHERE id = ?')
     .get(prediction.episode_id) as Episode;
 
-  if (episode.is_locked || (episode.deadline && new Date() > new Date(episode.deadline))) {
+  if (isEpisodeLocked(episode)) {
     res.status(403).json({ error: 'Cannot delete a locked prediction' });
     return;
   }

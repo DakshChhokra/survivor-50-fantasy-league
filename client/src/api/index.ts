@@ -11,6 +11,12 @@ function getToken(): string | null {
   }
 }
 
+let onUnauthorized: (() => void) | null = null;
+
+export function setOnUnauthorized(fn: (() => void) | null) {
+  onUnauthorized = fn;
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -30,6 +36,9 @@ async function request<T>(
   });
 
   if (!res.ok) {
+    if (res.status === 401 && !path.startsWith('/auth/')) {
+      onUnauthorized?.();
+    }
     const err = await res.json().catch(() => ({ error: 'Request failed' }));
     throw new Error((err as { error: string }).error || 'Request failed');
   }
@@ -48,11 +57,21 @@ export const api = {
     request<T>('PATCH', path, formData, true),
 };
 
+export type Season = {
+  id: number;
+  name: string;
+  is_current: number;
+  weekly_pick_points: number;
+  winner_pick_points: number;
+  created_at: string;
+};
+
 export type Contestant = {
   id: number;
   name: string;
   headshot_url: string | null;
   display_order: number;
+  season_id: number;
   created_at: string;
   is_eliminated?: number;
   eliminated_episode?: number | null;
@@ -66,6 +85,7 @@ export type Episode = {
   num_eliminations: number;
   deadline: string | null;
   is_locked: number;
+  season_id: number;
   created_at: string;
   elimination_count?: number;
 };
@@ -91,6 +111,8 @@ export type Prediction = {
   is_correct?: number;
   episode_number?: number;
   is_locked?: number;
+  deadline?: string | null;
+  elimination_count?: number;
 };
 
 export type PreseasonPick = {
@@ -99,6 +121,7 @@ export type PreseasonPick = {
   contestant_id: number;
   contestant_name: string;
   headshot_url: string | null;
+  season_id: number;
   created_at: string;
   username?: string;
 };
@@ -112,9 +135,11 @@ export type LeaderboardEntry = {
   preseason_bonus: number;
   total_points: number;
   preseason_pick_name: string | null;
+  preseason_pick_eliminated: number;
 };
 
 export type ShowStatus = {
+  season: Season | null;
   contestants: Contestant[];
   currentEpisode: Episode | null;
   latestEpisode: Episode | null;
@@ -125,4 +150,5 @@ export type User = {
   id: number;
   username: string;
   created_at: string;
+  is_admin?: boolean;
 };

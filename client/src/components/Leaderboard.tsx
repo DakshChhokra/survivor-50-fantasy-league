@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 type Entry = {
   user_id: number;
   username: string;
@@ -7,14 +9,13 @@ type Entry = {
   weekly_points?: number;
   preseason_bonus?: number;
   preseason_pick_name?: string | null;
+  preseason_pick_eliminated?: number;
 };
 
 type Props = {
   entries: Entry[];
   highlightUsername?: string;
 };
-
-const medals = ['🥇', '🥈', '🥉'];
 
 export default function Leaderboard({ entries, highlightUsername }: Props) {
   if (entries.length === 0) {
@@ -28,8 +29,9 @@ export default function Leaderboard({ entries, highlightUsername }: Props) {
       {entries.map((entry, idx) => {
         const isHighlighted = entry.username === highlightUsername;
         return (
-          <div
+          <Link
             key={entry.user_id}
+            to={`/profile/${encodeURIComponent(entry.username)}`}
             className={`
               flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
               ${isHighlighted
@@ -39,11 +41,7 @@ export default function Leaderboard({ entries, highlightUsername }: Props) {
             `}
           >
             <div className="w-8 text-center">
-              {idx < 3 ? (
-                <span className="text-lg">{medals[idx]}</span>
-              ) : (
-                <span className="text-stone-500 font-mono text-sm">{idx + 1}</span>
-              )}
+              <span className="text-stone-500 font-mono text-sm">{idx + 1}</span>
             </div>
 
             <div className="flex-1 min-w-0">
@@ -64,6 +62,7 @@ export default function Leaderboard({ entries, highlightUsername }: Props) {
               {entry.preseason_pick_name && (
                 <div className="text-xs text-stone-500 mt-0.5">
                   Winner pick: {entry.preseason_pick_name}
+                  {entry.preseason_pick_eliminated ? ' (eliminated)' : ''}
                 </div>
               )}
             </div>
@@ -82,7 +81,7 @@ export default function Leaderboard({ entries, highlightUsername }: Props) {
                 <div className="text-xs text-amber-500">+{entry.preseason_bonus} bonus</div>
               )}
             </div>
-          </div>
+          </Link>
         );
       })}
     </div>

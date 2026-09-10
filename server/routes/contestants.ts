@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import db, { Contestant } from '../db';
+import db, { Contestant, getCurrentSeason, resolveSeasonId } from '../db';
 import { requireAdmin } from '../middleware/auth';
 
 const router = Router();
@@ -33,18 +33,46 @@ const upload = multer({
   },
 });
 
-router.get('/', (_req: Request, res: Response) => {
+router.get('/', (req: Request, res: Response) => {
+  const seasonId = resolveSeasonId(req.query.season_id as string | undefined);
+  if (!seasonId) {
+    res.json([]);
+    return;
+  }
+
   const contestants = db
-    .prepare('SELECT * FROM contestants ORDER BY display_order ASC, name ASC')
-    .all() as Contestant[];
+    .prepare(
+      `
+      SELECT c.*,
+        CASE WHEN EXISTS (
+          SELECT 1 FROM eliminations el
+          JOIN episodes e ON el.episode_id = e.id
+          WHERE el.contestant_id = c.id AND e.season_id = c.season_id
+        ) THEN 1 ELSE 0 END AS is_eliminated
+      FROM contestants c
+      WHERE c.season_id = ?
+      ORDER BY c.display_order ASC, c.name ASC
+    `
+    )
+    .all(seasonId) as Contestant[];
   res.json(contestants);
 });
 
 router.post('/', requireAdmin, upload.single('headshot'), (req: Request, res: Response) => {
-  const { name, display_order } = req.body as { name?: string; display_order?: string };
+  const { name, display_order, season_id } = req.body as {
+    name?: string;
+    display_order?: string;
+    season_id?: string;
+  };
 
   if (!name?.trim()) {
     res.status(400).json({ error: 'Name is required' });
+    return;
+  }
+
+  const seasonId = resolveSeasonId(season_id) ?? getCurrentSeason()?.id;
+  if (!seasonId) {
+    res.status(400).json({ error: 'No season selected' });
     return;
   }
 
@@ -52,8 +80,10 @@ router.post('/', requireAdmin, upload.single('headshot'), (req: Request, res: Re
   const order = display_order ? parseInt(display_order, 10) : 0;
 
   const result = db
-    .prepare('INSERT INTO contestants (name, headshot_url, display_order) VALUES (?, ?, ?)')
-    .run(name.trim(), headshotUrl, order);
+    .prepare(
+      'INSERT INTO contestants (name, headshot_url, display_order, season_id) VALUES (?, ?, ?, ?)'
+    )
+    .run(name.trim(), headshotUrl, order, seasonId);
 
   const contestant = db
     .prepare('SELECT * FROM contestants WHERE id = ?')

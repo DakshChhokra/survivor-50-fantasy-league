@@ -67,3 +67,11 @@ export function formatEasternDeadline(utcIso: string): string {
     timeZoneName: 'short',
   });
 }
+
+/** Formats a YYYY-MM-DD air date. `new Date("YYYY-MM-DD")` is UTC; this is local midnight. */
+export function formatAirDate(
+  dateStr: string,
+  options?: Intl.DateTimeFormatOptions,
+): string {
+  return new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-US', options);
+}
