@@ -6,7 +6,7 @@ import { formatAirDate, formatEasternDeadline } from '../utils/time';
 import EpisodePicker from '../components/EpisodePicker';
 import ContestantCard from '../components/ContestantCard';
 import { isEpisodeLocked } from '@app/constants';
-import { multiBootNote } from '../utils/picks';
+import { multiBootNote, pickResult } from '../utils/picks';
 
 type EpisodePrediction = Prediction & {
   username: string;
@@ -153,7 +153,10 @@ export default function EpisodePage() {
           <div className="space-y-2">
             {predictions.map((pred) => {
               const isMe = pred.username === user?.username;
-              const correct = eliminatedIds.has(pred.contestant_id);
+              const result = pickResult({
+                is_correct: eliminatedIds.has(pred.contestant_id) ? 1 : 0,
+                elimination_count: eliminations.length,
+              });
               return (
                 <div
                   key={pred.id}
@@ -166,15 +169,9 @@ export default function EpisodePage() {
                   `}
                 >
                   <div className="w-6 text-center">
-                    {locked || eliminations.length > 0 ? (
-                      correct ? (
-                        <span className="text-emerald-400">✓</span>
-                      ) : (
-                        <span className="text-red-400">✕</span>
-                      )
-                    ) : (
-                      <span className="text-stone-600">○</span>
-                    )}
+                    {result === 'correct' && <span className="text-emerald-400">✓</span>}
+                    {result === 'wrong' && <span className="text-red-400">✕</span>}
+                    {result === 'pending' && <span className="text-stone-600">○</span>}
                   </div>
                   <span className={`flex-1 font-medium ${isMe ? 'text-torch-300' : 'text-stone-200'}`}>
                     {pred.username}
@@ -192,15 +189,17 @@ export default function EpisodePage() {
                     )}
                     <span className="text-stone-300 text-sm">{pred.contestant_name}</span>
                   </div>
-                  {(locked || eliminations.length > 0) && (
-                    <span
-                      className={`text-sm font-bold shrink-0 ${
-                        correct ? 'text-emerald-400' : 'text-stone-600'
-                      }`}
-                    >
-                      {correct ? `+${season?.weekly_pick_points ?? 0}` : '0'}
-                    </span>
-                  )}
+                  <span
+                    className={`text-sm font-bold shrink-0 ${
+                      result === 'correct' ? 'text-emerald-400' : 'text-stone-600'
+                    }`}
+                  >
+                    {result === 'correct'
+                      ? `+${season?.weekly_pick_points ?? 0}`
+                      : result === 'wrong'
+                        ? '0'
+                        : '—'}
+                  </span>
                 </div>
               );
             })}
