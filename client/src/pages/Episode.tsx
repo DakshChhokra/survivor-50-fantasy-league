@@ -56,7 +56,7 @@ export default function EpisodePage() {
 
   const myPrediction = predictions.find((p) => p.username === user?.username) ?? null;
   const locked = isEpisodeLocked(episode);
-  const canPick = Boolean(user) && !locked && Boolean(season?.is_current);
+  const canPick = Boolean(user && !user.isAdmin && !locked && season?.is_current);
 
   function handlePickSaved(prediction: Prediction) {
     const updated = { ...prediction, username: user!.username, is_correct: 0 } as EpisodePrediction;

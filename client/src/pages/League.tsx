@@ -61,7 +61,7 @@ export default function League() {
         api.get<ShowStatus>(`/show-status${q}`),
         api.get<Episode[]>(`/episodes${q}`),
       ];
-      if (user) {
+      if (user && !user.isAdmin) {
         fetches.push(
           api.get<Prediction[]>(`/predictions/mine${q}`),
           api.get<PreseasonPick | null>(`/preseason-picks/mine${q}`)
@@ -71,7 +71,7 @@ export default function League() {
       const results = await Promise.all(fetches);
       setStatus(results[0] as ShowStatus);
       setAllEpisodes(results[1] as Episode[]);
-      if (user) {
+      if (user && !user.isAdmin) {
         setMyPredictions(results[2] as Prediction[]);
         setPreseasonPick(results[3] as PreseasonPick | null);
       } else {
@@ -144,7 +144,9 @@ export default function League() {
           <h1 className="text-3xl font-bold text-torch-400">
             {season?.name ?? 'Survivor Fantasy'}
           </h1>
-          {user ? (
+          {user?.isAdmin ? (
+            <p className="text-stone-400 text-sm mt-1">Hey {user.username}</p>
+          ) : user ? (
             <p className="text-stone-400 text-sm mt-1">
               Hey {user.username} —{' '}
               <span className="text-torch-400 font-semibold">{myEntry?.total_points ?? 0} points</span>
@@ -179,7 +181,7 @@ export default function League() {
         <p className="text-stone-500">No season set up yet.</p>
       )}
 
-      {user && playing && currentEp && (
+      {user && !user.isAdmin && playing && currentEp && (
         <section>
           <h2 className="text-lg font-semibold text-stone-200 mb-3">
             Episode {currentEp.episode_number} — this week
@@ -193,7 +195,7 @@ export default function League() {
         </section>
       )}
 
-      {user && playing && winnerPickOpen && season && (
+      {user && !user.isAdmin && playing && winnerPickOpen && season && (
         <PreseasonSection
           contestants={stillIn}
           existing={preseasonPick}
@@ -202,7 +204,7 @@ export default function League() {
         />
       )}
 
-      {preseasonPick && !winnerPickOpen && season && (
+      {user && !user.isAdmin && preseasonPick && !winnerPickOpen && season && (
         <div className="card p-4">
           <h3 className="font-semibold text-stone-200 mb-1">Your winner pick</h3>
           <div className="flex items-center gap-3 mt-2">
@@ -250,7 +252,7 @@ export default function League() {
         />
       </section>
 
-      {user && myPredictions.length > 0 && season && (
+      {user && !user.isAdmin && myPredictions.length > 0 && season && (
         <section>
           <h2 className="text-lg font-semibold text-stone-100 mb-3">Your picks</h2>
           <div className="space-y-2">

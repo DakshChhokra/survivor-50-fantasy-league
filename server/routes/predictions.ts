@@ -59,6 +59,11 @@ router.get('/mine', requireAuth, (req: Request, res: Response) => {
 });
 
 router.post('/', requireAuth, (req: Request, res: Response) => {
+  if (req.user!.isAdmin) {
+    res.status(403).json({ error: 'Admin accounts cannot make picks' });
+    return;
+  }
+
   const { episode_id, contestant_id } = req.body as {
     episode_id?: number;
     contestant_id?: number;
