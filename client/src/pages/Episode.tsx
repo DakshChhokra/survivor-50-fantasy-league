@@ -6,6 +6,7 @@ import { formatAirDate, formatEasternDeadline } from '../utils/time';
 import EpisodePicker from '../components/EpisodePicker';
 import ContestantCard from '../components/ContestantCard';
 import { CORRECT_PICK_POINTS, isEpisodeLocked } from '@app/constants';
+import { multiBootNote } from '../utils/picks';
 
 type EpisodePrediction = Prediction & {
   username: string;
@@ -71,6 +72,7 @@ export default function EpisodePage() {
   }
 
   const eliminatedIds = new Set(eliminations.map((e) => e.contestant_id));
+  const bootNote = multiBootNote(episode.num_eliminations);
 
   return (
     <div className="space-y-8">
@@ -106,6 +108,7 @@ export default function EpisodePage() {
             Deadline: {formatEasternDeadline(episode.deadline)}
           </span>
         )}
+        {bootNote && <span className="text-torch-400">{bootNote}</span>}
       </div>
 
       {eliminations.length > 0 && (

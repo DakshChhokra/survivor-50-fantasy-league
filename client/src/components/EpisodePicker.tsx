@@ -3,6 +3,7 @@ import { api, Contestant, Episode, Prediction } from '../api';
 import { formatEasternDeadline } from '../utils/time';
 import ContestantCard from './ContestantCard';
 import { isEpisodeLocked } from '@app/constants';
+import { multiBootNote } from '../utils/picks';
 
 type Props = {
   episode: Episode;
@@ -20,6 +21,7 @@ export default function EpisodePicker({ episode, contestants, existingPrediction
 
   const locked = isEpisodeLocked(episode);
   const activeContestants = contestants.filter((c) => !c.is_eliminated);
+  const bootNote = multiBootNote(episode.num_eliminations);
 
   async function handleSave() {
     if (!selected) return;
@@ -58,10 +60,17 @@ export default function EpisodePicker({ episode, contestants, existingPrediction
       <h3 className="font-semibold text-stone-200 mb-1">
         Your pick for Episode {episode.episode_number}
       </h3>
-      {episode.deadline && (
-        <p className="text-xs text-stone-500 mb-3">
-          Deadline: {formatEasternDeadline(episode.deadline)}
-        </p>
+      {(bootNote || episode.deadline) && (
+        <div className="mb-3 space-y-1">
+          {bootNote && (
+            <p className="text-sm text-torch-400">{bootNote}</p>
+          )}
+          {episode.deadline && (
+            <p className="text-xs text-stone-500">
+              Deadline: {formatEasternDeadline(episode.deadline)}
+            </p>
+          )}
+        </div>
       )}
 
       <div className="flex flex-wrap gap-3 mb-4">

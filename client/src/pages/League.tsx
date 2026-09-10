@@ -15,7 +15,7 @@ import ContestantCard from '../components/ContestantCard';
 import EpisodePicker from '../components/EpisodePicker';
 import Leaderboard from '../components/Leaderboard';
 import { CORRECT_PICK_POINTS, PRESEASON_WINNER_BONUS, isEpisodeLocked } from '@app/constants';
-import { pickResult } from '../utils/picks';
+import { pickResult, multiBootNote } from '../utils/picks';
 import { contestantBio } from '../data/season51Bios';
 
 export default function League() {
@@ -307,6 +307,11 @@ export default function League() {
                     {ep.air_date && (
                       <span className="text-stone-500 text-sm ml-2">
                         {formatAirDate(ep.air_date)}
+                      </span>
+                    )}
+                    {multiBootNote(ep.num_eliminations) && (
+                      <span className="text-torch-400 text-xs ml-2">
+                        {ep.num_eliminations} going home
                       </span>
                     )}
                     {ep.deadline && (

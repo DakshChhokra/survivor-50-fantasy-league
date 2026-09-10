@@ -167,7 +167,7 @@ export default function AdminEpisodes({ seasonId }: { seasonId: number }) {
               >
                 {editId === ep.id ? (
                   <div className="space-y-3">
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    <div className="grid sm:grid-cols-3 gap-3">
                       <div>
                         <label className="block text-xs text-stone-400 mb-1">Air Date</label>
                         <input
@@ -175,6 +175,21 @@ export default function AdminEpisodes({ seasonId }: { seasonId: number }) {
                           value={editData.air_date ?? ep.air_date ?? ''}
                           onChange={(e) =>
                             setEditData((d) => ({ ...d, air_date: e.target.value }))
+                          }
+                          className="w-full bg-stone-800 border border-stone-700 text-stone-100 rounded px-3 py-1.5 text-sm focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-stone-400 mb-1"># Eliminations</label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={editData.num_eliminations ?? ep.num_eliminations}
+                          onChange={(e) =>
+                            setEditData((d) => ({
+                              ...d,
+                              num_eliminations: parseInt(e.target.value, 10) || 1,
+                            }))
                           }
                           className="w-full bg-stone-800 border border-stone-700 text-stone-100 rounded px-3 py-1.5 text-sm focus:outline-none"
                         />
