@@ -9,6 +9,7 @@ type Entry = {
   weekly_points?: number;
   preseason_bonus?: number;
   preseason_pick_name?: string | null;
+  preseason_pick_eliminated?: number;
 };
 
 type Props = {
@@ -61,6 +62,7 @@ export default function Leaderboard({ entries, highlightUsername }: Props) {
               {entry.preseason_pick_name && (
                 <div className="text-xs text-stone-500 mt-0.5">
                   Winner pick: {entry.preseason_pick_name}
+                  {entry.preseason_pick_eliminated ? ' (eliminated)' : ''}
                 </div>
               )}
             </div>

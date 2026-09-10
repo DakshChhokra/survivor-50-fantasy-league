@@ -133,6 +133,7 @@ export type LeaderboardEntry = {
   preseason_bonus: number;
   total_points: number;
   preseason_pick_name: string | null;
+  preseason_pick_eliminated: number;
 };
 
 export type ShowStatus = {

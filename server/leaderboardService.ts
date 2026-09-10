@@ -12,6 +12,7 @@ export type LeaderboardEntry = {
   preseason_bonus: number;
   total_points: number;
   preseason_pick_name: string | null;
+  preseason_pick_eliminated: number;
 };
 
 export function computeLeaderboard(seasonId: number): LeaderboardEntry[] {
@@ -61,13 +62,20 @@ export function computeLeaderboard(seasonId: number): LeaderboardEntry[] {
     const preseasonPick = db
       .prepare(
         `
-        SELECT pp.contestant_id, c.name AS contestant_name
+        SELECT pp.contestant_id, c.name AS contestant_name,
+          CASE WHEN EXISTS (
+            SELECT 1 FROM eliminations el
+            JOIN episodes e ON el.episode_id = e.id
+            WHERE el.contestant_id = c.id AND e.season_id = c.season_id
+          ) THEN 1 ELSE 0 END AS is_eliminated
         FROM preseason_picks pp
         JOIN contestants c ON pp.contestant_id = c.id
         WHERE pp.user_id = ? AND pp.season_id = ?
       `
       )
-      .get(user.id, seasonId) as { contestant_id: number; contestant_name: string } | undefined;
+      .get(user.id, seasonId) as
+        | { contestant_id: number; contestant_name: string; is_eliminated: number }
+        | undefined;
 
     let preseasonBonus = 0;
     if (preseasonPick) {
@@ -120,6 +128,7 @@ export function computeLeaderboard(seasonId: number): LeaderboardEntry[] {
       preseason_bonus: preseasonBonus,
       total_points: weeklyPoints + preseasonBonus,
       preseason_pick_name: preseasonPick?.contestant_name || null,
+      preseason_pick_eliminated: preseasonPick?.is_eliminated || 0,
     };
   });
 }
