@@ -9,6 +9,7 @@ dotenv.config();
 import './db';
 
 import authRoutes from './routes/auth';
+import seasonsRoutes from './routes/seasons';
 import contestantsRoutes from './routes/contestants';
 import episodesRoutes from './routes/episodes';
 import eliminationsRoutes from './routes/eliminations';
@@ -30,6 +31,7 @@ if (!fs.existsSync(headshotsDir)) {
 app.use('/headshots', express.static(headshotsDir));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/seasons', seasonsRoutes);
 app.use('/api/contestants', contestantsRoutes);
 app.use('/api/episodes', episodesRoutes);
 app.use('/api/eliminations', eliminationsRoutes);
