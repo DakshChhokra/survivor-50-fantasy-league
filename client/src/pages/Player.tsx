@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import { api, Contestant, Prediction, Season } from '../api';
 import { useAuth } from '../context/AuthContext';
 import ContestantCard from '../components/ContestantCard';
-import { CORRECT_PICK_POINTS, PRESEASON_WINNER_BONUS } from '@app/constants';
 import { pickResult } from '../utils/picks';
 
 type SeasonSlice = {
@@ -126,8 +125,8 @@ function SeasonBlock({ slice }: { slice: SeasonSlice }) {
               <p className="font-medium text-stone-200">{slice.preseason_pick.contestant_name}</p>
               <p className="text-xs text-stone-500">
                 {slice.preseason_bonus > 0
-                  ? `+${PRESEASON_WINNER_BONUS} they won`
-                  : `+${PRESEASON_WINNER_BONUS} if they win`}
+                  ? `+${slice.season.winner_pick_points} they won`
+                  : `+${slice.season.winner_pick_points} if they win`}
               </p>
             </div>
           </div>
@@ -168,7 +167,7 @@ function SeasonBlock({ slice }: { slice: SeasonSlice }) {
                   }`}
                 >
                   {result === 'correct'
-                    ? `+${CORRECT_PICK_POINTS}`
+                    ? `+${slice.season.weekly_pick_points}`
                     : result === 'wrong'
                       ? '0'
                       : '—'}

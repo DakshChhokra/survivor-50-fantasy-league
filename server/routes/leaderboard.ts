@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
-import db, { Season, resolveSeasonId } from '../db';
-import { CORRECT_PICK_POINTS } from '../constants';
+import db, { Season, getSeasonById, resolveSeasonId } from '../db';
 import { getSortedLeaderboard } from '../leaderboardService';
 
 const router = Router();
@@ -110,6 +109,7 @@ router.get('/details', (req: Request, res: Response) => {
     return;
   }
 
+  const season = getSeasonById(seasonId)!;
   const entries = getSortedLeaderboard(seasonId);
 
   const detailed = entries.map((entry) => {
@@ -135,7 +135,7 @@ router.get('/details', (req: Request, res: Response) => {
 
     return {
       ...entry,
-      breakdown: breakdown.map((b) => ({ ...b, points: b.is_correct ? CORRECT_PICK_POINTS : 0 })),
+      breakdown: breakdown.map((b) => ({ ...b, points: b.is_correct ? season.weekly_pick_points : 0 })),
     };
   });
 

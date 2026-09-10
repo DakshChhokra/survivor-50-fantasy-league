@@ -3,9 +3,10 @@ import { api, Season } from '../api';
 import AdminSetup from './admin/Setup';
 import AdminEpisodes from './admin/Episodes';
 import AdminResults from './admin/Results';
+import AdminPoints from './admin/Points';
 import AdminUsers from './admin/Users';
 
-type Tab = 'contestants' | 'episodes' | 'results' | 'users';
+type Tab = 'contestants' | 'episodes' | 'results' | 'points' | 'users';
 
 export default function Admin() {
   const [seasons, setSeasons] = useState<Season[]>([]);
@@ -115,7 +116,7 @@ export default function Admin() {
       ) : (
         <>
           <div className="flex flex-wrap gap-2">
-            {(['contestants', 'episodes', 'results', 'users'] as Tab[]).map((t) => (
+            {(['contestants', 'episodes', 'results', 'points', 'users'] as Tab[]).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -132,6 +133,9 @@ export default function Admin() {
           {tab === 'contestants' && seasonId && <AdminSetup seasonId={seasonId} />}
           {tab === 'episodes' && seasonId && <AdminEpisodes seasonId={seasonId} />}
           {tab === 'results' && seasonId && <AdminResults seasonId={seasonId} />}
+          {tab === 'points' && selected && (
+            <AdminPoints season={selected} onSaved={() => loadSeasons(seasonId ?? undefined)} />
+          )}
           {tab === 'users' && <AdminUsers />}
         </>
       )}

@@ -1,7 +1,4 @@
 import db, { getSeasonById } from './db';
-import { CORRECT_PICK_POINTS, PRESEASON_WINNER_BONUS } from './constants';
-
-export { CORRECT_PICK_POINTS, PRESEASON_WINNER_BONUS } from './constants';
 
 export type LeaderboardEntry = {
   user_id: number;
@@ -16,7 +13,8 @@ export type LeaderboardEntry = {
 };
 
 export function computeLeaderboard(seasonId: number): LeaderboardEntry[] {
-  if (!getSeasonById(seasonId)) return [];
+  const season = getSeasonById(seasonId);
+  if (!season) return [];
 
   const adminUsername = process.env.ADMIN_USERNAME || 'admin';
   const users = db
@@ -57,7 +55,7 @@ export function computeLeaderboard(seasonId: number): LeaderboardEntry[] {
       )
       .get(user.id, seasonId) as { total_picks: number; correct_picks: number };
 
-    const weeklyPoints = (weeklyStats.correct_picks || 0) * CORRECT_PICK_POINTS;
+    const weeklyPoints = (weeklyStats.correct_picks || 0) * season.weekly_pick_points;
 
     const preseasonPick = db
       .prepare(
@@ -114,7 +112,7 @@ export function computeLeaderboard(seasonId: number): LeaderboardEntry[] {
           .get(seasonId, seasonId) as { id: number } | undefined;
 
         if (lastStanding && lastStanding.id === preseasonPick.contestant_id) {
-          preseasonBonus = PRESEASON_WINNER_BONUS;
+          preseasonBonus = season.winner_pick_points;
         }
       }
     }

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatAirDate, formatEasternDeadline } from '../utils/time';
 import EpisodePicker from '../components/EpisodePicker';
 import ContestantCard from '../components/ContestantCard';
-import { CORRECT_PICK_POINTS, isEpisodeLocked } from '@app/constants';
+import { isEpisodeLocked } from '@app/constants';
 import { multiBootNote } from '../utils/picks';
 
 type EpisodePrediction = Prediction & {
@@ -20,7 +20,7 @@ export default function EpisodePage() {
   const [eliminations, setEliminations] = useState<Elimination[]>([]);
   const [predictions, setPredictions] = useState<EpisodePrediction[]>([]);
   const [contestants, setContestants] = useState<Contestant[]>([]);
-  const [currentSeasonId, setCurrentSeasonId] = useState<number | null>(null);
+  const [season, setSeason] = useState<Season | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,18 +29,18 @@ export default function EpisodePage() {
     setLoading(true);
     setError(null);
     try {
-      const [ep, elims, preds, current] = await Promise.all([
+      const [ep, elims, preds, seasons] = await Promise.all([
         api.get<Episode>(`/episodes/${id}`),
         api.get<Elimination[]>(`/eliminations/episode/${id}`),
         api.get<EpisodePrediction[]>(`/predictions/episode/${id}`),
-        api.get<Season | null>('/seasons/current'),
+        api.get<Season[]>('/seasons'),
       ]);
       const conts = await api.get<Contestant[]>(`/contestants?season_id=${ep.season_id}`);
       setEpisode(ep);
       setEliminations(elims);
       setPredictions(preds);
       setContestants(conts);
-      setCurrentSeasonId(current?.id ?? null);
+      setSeason(seasons.find((s) => s.id === ep.season_id) ?? null);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -56,7 +56,7 @@ export default function EpisodePage() {
 
   const myPrediction = predictions.find((p) => p.username === user?.username) ?? null;
   const locked = isEpisodeLocked(episode);
-  const canPick = Boolean(user) && !locked && currentSeasonId === episode.season_id;
+  const canPick = Boolean(user) && !locked && Boolean(season?.is_current);
 
   function handlePickSaved(prediction: Prediction) {
     const updated = { ...prediction, username: user!.username, is_correct: 0 } as EpisodePrediction;
@@ -198,7 +198,7 @@ export default function EpisodePage() {
                         correct ? 'text-emerald-400' : 'text-stone-600'
                       }`}
                     >
-                      {correct ? `+${CORRECT_PICK_POINTS}` : '0'}
+                      {correct ? `+${season?.weekly_pick_points ?? 0}` : '0'}
                     </span>
                   )}
                 </div>

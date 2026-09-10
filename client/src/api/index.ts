@@ -61,6 +61,8 @@ export type Season = {
   id: number;
   name: string;
   is_current: number;
+  weekly_pick_points: number;
+  winner_pick_points: number;
   created_at: string;
 };
 

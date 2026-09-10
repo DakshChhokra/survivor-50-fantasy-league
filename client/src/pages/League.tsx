@@ -14,7 +14,7 @@ import { formatAirDate, formatEasternDeadline } from '../utils/time';
 import ContestantCard from '../components/ContestantCard';
 import EpisodePicker from '../components/EpisodePicker';
 import Leaderboard from '../components/Leaderboard';
-import { CORRECT_PICK_POINTS, PRESEASON_WINNER_BONUS, isEpisodeLocked } from '@app/constants';
+import { isEpisodeLocked } from '@app/constants';
 import { pickResult, multiBootNote } from '../utils/picks';
 import { contestantBio } from '../data/season51Bios';
 
@@ -193,15 +193,16 @@ export default function League() {
         </section>
       )}
 
-      {user && playing && winnerPickOpen && (
+      {user && playing && winnerPickOpen && season && (
         <PreseasonSection
           contestants={stillIn}
           existing={preseasonPick}
+          winnerPickPoints={season.winner_pick_points}
           onSaved={setPreseasonPick}
         />
       )}
 
-      {preseasonPick && !winnerPickOpen && (
+      {preseasonPick && !winnerPickOpen && season && (
         <div className="card p-4">
           <h3 className="font-semibold text-stone-200 mb-1">Your winner pick</h3>
           <div className="flex items-center gap-3 mt-2">
@@ -212,7 +213,7 @@ export default function League() {
             <div>
               <p className="font-medium text-stone-200">{preseasonPick.contestant_name}</p>
               <p className="text-xs text-stone-500">
-                +{PRESEASON_WINNER_BONUS} pts if they win
+                +{season.winner_pick_points} pts if they win
               </p>
             </div>
           </div>
@@ -249,7 +250,7 @@ export default function League() {
         />
       </section>
 
-      {user && myPredictions.length > 0 && (
+      {user && myPredictions.length > 0 && season && (
         <section>
           <h2 className="text-lg font-semibold text-stone-100 mb-3">Your picks</h2>
           <div className="space-y-2">
@@ -276,7 +277,7 @@ export default function League() {
                     }`}
                   >
                     {result === 'correct'
-                      ? `+${CORRECT_PICK_POINTS}`
+                      ? `+${season.weekly_pick_points}`
                       : result === 'wrong'
                         ? '0'
                         : '—'}
@@ -518,10 +519,12 @@ function ContestantBioModal({
 function PreseasonSection({
   contestants,
   existing,
+  winnerPickPoints,
   onSaved,
 }: {
   contestants: Contestant[];
   existing: PreseasonPick | null;
+  winnerPickPoints: number;
   onSaved: (pick: PreseasonPick) => void;
 }) {
   const [selected, setSelected] = useState<number | null>(existing?.contestant_id ?? null);
@@ -548,7 +551,7 @@ function PreseasonSection({
     <div className="bg-amber-950/30 border border-amber-900/50 rounded-lg p-4">
       <h3 className="font-semibold text-amber-400 mb-1">Pick the winner</h3>
       <p className="text-stone-400 text-sm mb-4">
-        +{PRESEASON_WINNER_BONUS} if they take the season. You can change this until episode 1
+        +{winnerPickPoints} if they take the season. You can change this until episode 1
         locks.
       </p>
       <div className="flex flex-wrap gap-3 mb-4">

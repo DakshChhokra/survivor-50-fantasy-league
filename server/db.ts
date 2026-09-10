@@ -29,6 +29,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     is_current INTEGER NOT NULL DEFAULT 0,
+    weekly_pick_points INTEGER NOT NULL DEFAULT 30,
+    winner_pick_points INTEGER NOT NULL DEFAULT 50,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -173,6 +175,18 @@ function migrateSeasons(): void {
 
 migrateSeasons();
 
+function migrateSeasonPoints(): void {
+  const cols = columnNames('seasons');
+  if (!cols.includes('weekly_pick_points')) {
+    db.exec('ALTER TABLE seasons ADD COLUMN weekly_pick_points INTEGER NOT NULL DEFAULT 30');
+  }
+  if (!cols.includes('winner_pick_points')) {
+    db.exec('ALTER TABLE seasons ADD COLUMN winner_pick_points INTEGER NOT NULL DEFAULT 50');
+  }
+}
+
+migrateSeasonPoints();
+
 export type User = {
   id: number;
   username: string;
@@ -184,6 +198,8 @@ export type Season = {
   id: number;
   name: string;
   is_current: number;
+  weekly_pick_points: number;
+  winner_pick_points: number;
   created_at: string;
 };
 
