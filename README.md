@@ -1,38 +1,37 @@
 # Survivor Fantasy League
 
-A Survivor TV show fantasy league app for friend groups. Pick who gets voted off each week and compete on the leaderboard.
+A Survivor fantasy league for a friend group. Pick who gets voted off each week. Seasons are separate (Survivor 50, 51, …) with their own contestants, episodes, and leaderboard. Accounts carry over.
 
-## Features
+## How it works
 
-- **Public homepage**: Contestant status (Still In / Eliminated) + leaderboard
-- **Weekly picks**: Submit who you think will be eliminated before the Wednesday deadline (+25 pts each correct pick)
-- **Preseason winner pick**: Pick who wins the season for a +50 pt bonus
-- **Admin panel**: Upload contestants, create episodes, mark eliminations, view all users
-
-## Admin Workflow
-
-1. **Setup** (`/admin/setup`): Add contestants with headshot photos
-2. **Episodes** (`/admin/episodes`): Create episodes with air dates and pick deadlines
-3. **Results** (`/admin/results`): After each episode airs, mark who was eliminated — scores update immediately
-4. **Users** (`/admin/users`): View all registered accounts
+- **League page**: tribe, leaderboard, this week’s pick, your history. Switch seasons from the dropdown (past seasons are read-only).
+- **Weekly picks**: who goes home this episode. Friends can see each other’s picks — that’s on purpose.
+- **Winner pick**: who wins the season (+50). Changeable until episode 1 locks.
+- **Admin**: one page — create a season, add contestants/headshots, episodes, mark eliminations, reset a friend’s password.
 
 ## Scoring
 
 | Event | Points |
 |-------|--------|
-| Correct weekly pick | +25 pts |
-| Correct preseason winner pick | +50 pts bonus |
+| Correct weekly pick | +30 |
+| Correct preseason winner pick | +50 |
 
-A weekly pick is correct if the picked contestant is among those eliminated that episode (works for double-elimination episodes too).
+A weekly pick is correct if that contestant was eliminated in that episode (double boots count).
 
-## Password Reset
+## Admin workflow
 
-No self-service password reset. Admin can reset a password directly in the database:
+1. Create a season (`Survivor 51`) and make it current when you’re ready to play.
+2. **Contestants**: add names + headshots (edit if you typo).
+3. **Episodes**: air date + pick deadline (Eastern).
+4. **Results**: after the episode, mark who went home — scores update immediately.
+5. **Users**: reset a password if someone forgets. No email flow.
 
-```bash
-sqlite3 data/fantasy.db "UPDATE users SET password='newpassword' WHERE username='someone';"
-```
+Old seasons stay in the dropdown. People who skip a season simply don’t show on that season’s board until they pick.
+
+## Password reset
+
+Admin → Users → Set password. Tell them the new one.
 
 ## Database
 
-The SQLite database is stored at `./data/fantasy.db`.
+SQLite at `./data/fantasy.db`. Deploy notes are in HELP.md.
