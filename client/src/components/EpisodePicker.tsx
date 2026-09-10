@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api, Contestant, Episode, Prediction } from '../api';
 import { formatEasternDeadline } from '../utils/time';
 import ContestantCard from './ContestantCard';
+import { isEpisodeLocked } from '@app/constants';
 
 type Props = {
   episode: Episode;
@@ -17,10 +18,7 @@ export default function EpisodePicker({ episode, contestants, existingPrediction
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isLocked =
-    episode.is_locked ||
-    (episode.deadline ? new Date() > new Date(episode.deadline) : false);
-
+  const locked = isEpisodeLocked(episode);
   const activeContestants = contestants.filter((c) => !c.is_eliminated);
 
   async function handleSave() {
@@ -40,13 +38,12 @@ export default function EpisodePicker({ episode, contestants, existingPrediction
     }
   }
 
-  if (isLocked) {
+  if (locked) {
     return (
-      <div className="bg-stone-900 border border-stone-700 rounded-lg p-4">
-        <div className="flex items-center gap-2 text-stone-400 text-sm mb-3">
-          <span>🔒</span>
-          <span>Picks are locked for Episode {episode.episode_number}</span>
-        </div>
+      <div className="card p-4">
+        <p className="text-stone-400 text-sm mb-3">
+          Picks are locked for Episode {episode.episode_number}
+        </p>
         {existingPrediction && (
           <p className="text-stone-300 text-sm">
             Your pick: <strong>{existingPrediction.contestant_name}</strong>
@@ -57,7 +54,7 @@ export default function EpisodePicker({ episode, contestants, existingPrediction
   }
 
   return (
-    <div className="bg-stone-900 border border-stone-800 rounded-lg p-4">
+    <div className="card p-4">
       <h3 className="font-semibold text-stone-200 mb-1">
         Your pick for Episode {episode.episode_number}
       </h3>
@@ -84,7 +81,7 @@ export default function EpisodePicker({ episode, contestants, existingPrediction
       <button
         onClick={handleSave}
         disabled={!selected || saving}
-        className="bg-torch-600 hover:bg-torch-500 disabled:bg-stone-700 disabled:text-stone-500 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+        className="btn-primary"
       >
         {saving ? 'Saving...' : existingPrediction ? 'Update Pick' : 'Save Pick'}
       </button>
